@@ -1,6 +1,8 @@
 const express = require('express');
-const bodyparser = require("body-parser")
-const {v4 : uuidv4, stringify} = require("uuid")
+const bodyparser = require("body-parser");
+const https = require('https');
+const fs = require ('fs');
+const {v4 : uuidv4, stringify} = require("uuid");
 const port = 3000;
 const app = express();
 const {createClient} = require("redis");
@@ -8,38 +10,58 @@ const md5 = require("md5");
 
 const redisClient = createClient(
 {
-    Url: 'redis://default@localhost:6379'
+    Url: 'redis://default@localhost:4043'
 }
     
 );
 
 app.use(bodyparser.json());
-app.listen(port, async ()=>{
-    await redisClient.connect();
-    console.log('listening on port '+port);
-});
+https.createServer({
+    key: fs.readFileSync('server.key'),
+    cert: fs.readFileSync('server.cert'),
+}, app).listen(port, async () => {
+    console.log('Listening...')
+})
+// app.listen(port, async ()=>{
+//     await redisClient.connect();
+//     console.log('listening on port '+port);
+// });
 
 app.get('/', (req,res)=>{
-    res.send('Sup mother******s!')
+    res.send('Hello world!')
 });
 
 app.post("/user",(req,res)=>{
     const newUserRequestObject = req.body;
+    const loginPassword = req.body.password;
+    const hash = md5(loginPassword);
+    console.log(hash);
+    newUserRequestObject.password=hash;
+    newUserRequestObject.verifyPassword=hash;
     console.log('New User:',JSON.stringify(newUserRequestObject));
     redisClient.hSet('users',req.body.email,JSON.stringify(newUserRequestObject));
+
     res.send('New user'+newUserRequestObject.email+' added');
 })
-app.post("/login", (req,res)=>{
+app.post("/login", async (req,res)=>{
+    
+    
     const loginEmail = req.body.userName;
     console.log(JSON.stringify(req.body));
     console.log("loginEmail", loginEmail);
-    const loginPassword = req.body.password;
+    const loginPassword = md5(req.body.password);
     console.log("loginPassword", loginPassword);
 
-if (loginEmail == "abc@12345.com" && loginPassword == "Passw0rd"){
+    const userString=await redisClient.hGet('users',loginEmail);
+    const userObject=JSON.parse(userString)
+    if(userString=='' || userString==null){
+        res.status(404);
+        res.send('User not found');
+    }
+    else if (loginEmail == userObject.userName && loginPassword == userObject.password){
       const token = uuidv4();
       res.send(token);
-  } else{
+    } else{
       res.status(401);//unauthorized
       res.send("Invalid user or password");
   }
