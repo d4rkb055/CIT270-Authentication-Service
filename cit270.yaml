@@ -33,3 +33,15 @@ spec:
       - name: ssl
         secret:
           secretName: naughty-secrets
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: naughty-loadbalancer
+spec:
+  selector:
+    app: letsgetnaughty
+  type: LoadBalancer
+  ports:
+  - port: 443
+    targetPort: 443

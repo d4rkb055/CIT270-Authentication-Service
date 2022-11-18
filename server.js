@@ -4,7 +4,7 @@ const https = require('https');
 const fs = require ('fs');
 const {v4 : uuidv4, stringify} = require("uuid");
 
-const port = 4043;
+const port = 443;
 
 const app = express();
 const {createClient} = require("redis");
@@ -12,13 +12,14 @@ const md5 = require("md5");
 
 const redisClient = createClient(
 {
-    Url: 'redis://default@35.226.214.138:6379'
+    url: 'redis://default@35.226.214.138:6379'
 
 }
     
 );
 
 app.use(bodyparser.json());
+app.use(express.static("public"))
 https.createServer({
     key: fs.readFileSync('./SSL/server.key'),
     cert: fs.readFileSync('./SSL/server.cert'),
@@ -32,13 +33,14 @@ https.createServer({
     catch(error) {
         console.log(error)}
     })
+
 // app.listen(port, async ()=>{
 //     await redisClient.connect();
 //     console.log('listening on port '+port);
 // });
 
 app.get('/', (req,res)=>{
-    res.send('Hello world!')
+    res.send('Hello my inferior beings')
 });
 
 app.post("/user",(req,res)=>{
@@ -76,3 +78,4 @@ app.post("/login", async (req,res)=>{
       res.send("Invalid user or password");
   }
 })
+
