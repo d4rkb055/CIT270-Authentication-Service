@@ -12,7 +12,7 @@ const md5 = require("md5");
 
 const redisClient = createClient(
 {
-    url: 'redis://default@35.226.214.138:6379'
+    url:`redis://default:${process.env.REDIS_PASS}@redis-stedi-kaden:6379`
 
 }
     
